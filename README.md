@@ -2,9 +2,7 @@
 
 ## Overview
 
-Most business data originates from operational systems that are optimized for transactions rather than analytics. As a result, answering common business questions often requires repeatedly rebuilding the same joins, aggregations, and business logic.
-
-In this project, I used **MySQL** and **dbt** to transform a raw movie rental dataset ([Sakila Movie Rental Database](https://dev.mysql.com/doc/sakila/en/)) containing **15,986 rental transactions and 599 customers** into a reusable analytics layer. The objective was not simply to answer a single business question, but to create scalable analytical assets that support customer, revenue, and demand analysis.
+In this project, I used **MySQL** and **dbt** to transform a raw movie rental dataset ([Sakila Movie Rental Database](https://dev.mysql.com/doc/sakila/en/)) containing **15,986 rental transactions and 599 customers** into a reusable analytics layer. The objective was to create scalable analytical assets that support customer, revenue, and demand analysis.
 
 ---
 
@@ -237,25 +235,22 @@ movie-analytics-dbt/
 │
 ├── models/
 │   ├── staging/
-│   │   └── stg_customer_film_analytics.sql
-│   │
 │   └── marts/
-│       ├── mart_customer_ltv.sql
-│       ├── mart_category_revenue.sql
-│       └── mart_seasonal_demand.sql
 │
 ├── docs/
-│   ├── dbt_architecture.png
-│   ├── customer_ltv_mart.png
-│   ├── category_revenue_mart.png
-│   └── seasonal_demand_mart.png
-│   └── Grain Transformation Diagram
 │
 └── README.md
 ```
 
 ---
 
-## Technology Stack
+### Skills Demonstrated
 
-**MySQL · SQL · dbt · Data Modeling · Analytics Engineering**
+`SQL`
+`MySQL`
+`dbt`
+`ELT`
+`Data Modeling`
+`Business Intelligence`
+`Analytics Engineering`
+`Tableau`
