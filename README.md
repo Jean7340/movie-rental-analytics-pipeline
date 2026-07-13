@@ -1,240 +1,131 @@
-# Modern Data Stack for Customer Analytics
+# Movie Rental Analytics Pipeline
 
-## Overview
+**Building reusable analytics marts with MySQL, dbt, and Tableau**
 
-In this project, I used **MySQL** and **dbt** to transform a raw movie rental dataset ([Sakila Movie Rental Database](https://dev.mysql.com/doc/sakila/en/)) containing **15,986 rental transactions and 599 customers** into a reusable analytics layer. The objective was to create scalable analytical assets that support customer, revenue, and demand analysis.
+15,986 raw rental transactions (Sakila dataset, 599 customers, 16 categories) transformed into a layered analytics stack — from operational data to business dashboards, with a data-quality bug caught and fixed along the way.
 
 ---
 
-## Business Problem
+## 📊 Interactive Dashboards
 
-The raw transactional dataset contained customer activity, rental events, film information, and revenue data at the transaction level.
+🔗 **[View on Tableau Public](YOUR_TABLEAU_LINK_HERE)**
 
-While suitable for operational processes, the structure made it difficult to efficiently answer questions such as:
+[![Dashboard Preview](docs/dashboard_overview.png)](YOUR_TABLEAU_LINK_HERE)
 
-- Who are the highest-value customers?
-- Which categories contribute the most revenue?
+| Dashboard | Question it answers | Key finding |
+|---|---|---|
+| **Executive Overview** | How is the business doing? | $67,407 revenue over 16,044 rentals; demand peaked in July 2005, led by Sports, Sci-Fi, Animation |
+| **Customer Insights** | Who are our customers? | Avg LTV $112.53; value is driven by rental frequency — only a small segment exceeds $180 |
+| **Revenue Drivers** | What drives revenue? | Top 5 categories = 35.2% of revenue; high volume ≠ high per-rental value (Animation: #3 in revenue, #12 in revenue/rental) |
+
+*LTV is calculated within the observed period (May 2005 – Feb 2006).*
+
+---
+
+## Business Questions
+
+- Who are the highest-value customers, and how engaged are they?
+- Which film categories drive the most revenue — and is revenue concentrated?
 - How does demand vary across categories and time periods?
-- How can business metrics be standardized and reused across analyses?
-
-Without a modeling layer, analysts would need to repeatedly rebuild the same logic for every new report or dashboard.
+- How can business metrics be standardized and reused instead of rebuilt per report?
 
 ---
 
-## Solution Architecture
+## Architecture
 
-<p align="center">
-  <img src="docs/dbt_architecture.png" width="850">
-</p>
+![dbt Architecture](docs/dbt_architecture.png)
 
-The project follows a layered analytics architecture that transforms raw transactional data into reusable business-ready analytics assets.
-
-```text
-Raw Data
-    ↓
-Staging Layer
-    ↓
-Business Data Marts
-    ↓
-Business Insights
-```
-
----
-
-## Data Overview
-
-### Source Dataset
-
-The source dataset contains rental transaction activity for a DVD rental business.
-
-Key attributes include:
-
-- Customer information
-- Film information
-- Film category
-- Rental activity
-- Revenue metrics
-- Rental month
-
-### Scale
-
-| Metric | Value |
-|----------|----------|
-| Transactions | 15,986 |
-| Customers | 599 |
-| Categories | 16 |
-| Data Source | MySQL |
+One staging model standardizes the raw table; three marts each answer a distinct business question at a different grain.
 
 ### Grain Transformation
 
-The project transforms rental transaction records into multiple business-oriented analytical grains. Each mart is designed around a specific business question, enabling reusable reporting and analysis without repeatedly querying raw transaction data.
+![Grain Transformation](docs/grain_transformation.png)
 
-<p align="center">
-  <img src="docs/grain_transformation.png" width="1100">
-</p>
+Transaction-level records are re-aggregated into three business-oriented grains — customer, category, and month × category — so each mart directly serves its question without re-querying raw data.
 
 ---
 
-## What I Built
+## Data Marts
 
-### 1. Staging Layer
+| Model | Grain | Key metrics |
+|---|---|---|
+| `stg_customer_film_analytics` | transaction | standardized fields, single source for all marts |
+| `mart_customer_ltv` | customer | LTV, total rentals, films watched, avg spend/rental |
+| `mart_category_revenue` | category | revenue, rental volume, revenue per rental, film count |
+| `mart_seasonal_demand` | month × category | active customers, rentals, monthly revenue |
 
-Model:
+### `mart_customer_ltv` — example output (top 5 by LTV)
 
-```text
-stg_customer_film_analytics
+| customer | total_rentals | customer_ltv | films_watched | categories_watched | avg_spend_per_rental |
+|---|---|---|---|---|---|
+| Karl Seal | 45 | $221.55 | 44 | 15 | $4.92 |
+| Eleanor Hunt | 46 | $216.54 | 46 | 14 | $4.71 |
+| Clara Shaw | 42 | $195.58 | 42 | 16 | $4.66 |
+| Marion Snyder | 39 | $194.61 | 38 | 14 | $4.99 |
+| Rhonda Kennedy | 39 | $194.61 | 38 | 15 | $4.99 |
+
+### `mart_category_revenue` — example output (top 5 by revenue)
+
+| category | film_count | total_rentals | total_revenue | revenue_per_rental |
+|---|---|---|---|---|
+| Sports | 73 | 1,179 | $5,314.21 | $4.51 |
+| Sci-Fi | 59 | 1,101 | $4,756.98 | $4.32 |
+| Animation | 64 | 1,166 | $4,656.30 | $3.99 |
+| Drama | 61 | 1,060 | $4,587.39 | $4.33 |
+| Comedy | 56 | 941 | $4,383.58 | $4.66 |
+
+### `mart_seasonal_demand` — example output (top 5 by monthly revenue)
+
+| month | category | active_customers | total_rentals | total_revenue |
+|---|---|---|---|---|
+| 2005-07 | Sports | 340 | 497 | $2,281.03 |
+| 2005-07 | Sci-Fi | 312 | 462 | $2,013.38 |
+| 2005-07 | Drama | 318 | 463 | $1,978.37 |
+| 2005-08 | Sports | 304 | 432 | $1,962.68 |
+| 2005-07 | Animation | 325 | 489 | $1,954.11 |
+
+---
+
+## 🐛 Validation: Bug Found & Fixed
+
+While validating dashboard numbers against raw data, I found that `mart_customer_ltv` used `MAX(total_spent)` — but `total_spent` in the source table is a **per-rental value**, not a customer total. The mart was reporting each customer's *single most expensive rental* as their "lifetime value" (top "LTV" ≈ $17, yet 19 films watched — logically impossible).
+
+**Fix:** aggregate with `SUM` instead of `MAX`, then re-validate against raw transactions:
+
+```sql
+SUM(film_revenue)      AS customer_ltv,   -- was: MAX(total_spent)
+SUM(film_rental_count) AS total_rentals   -- was: MAX(total_rentals)
 ```
 
-Purpose:
-
-- Standardize source fields
-- Create a consistent analytical foundation
-- Separate raw operational data from business logic
+After the fix, top customer Karl Seal shows $221.55 across 45 rentals — matching a direct aggregation of the raw data. Takeaway: **always validate mart output against source data before shipping.**
 
 ---
 
-### 2. Customer Lifetime Value Mart
+## Key Insights
 
-Model:
-
-```text
-mart_customer_ltv
-```
-
-Business Questions:
-
-- Who are the highest-value customers?
-- How engaged are they with the platform?
-
-Key Metrics:
-
-- Customer Lifetime Value (LTV)
-- Total Rentals
-- Films Watched
-- Categories Watched
-- Average Spend per Rental
-
-Example Output:
-
-<p align="center">
-  <img src="docs/customer_ltv_mart.png" width="900">
-</p>
-
----
-
-### 3. Revenue Performance Mart
-
-Model:
-
-```text
-mart_category_revenue
-```
-
-Business Questions:
-
-- Which categories drive the most revenue?
-- How concentrated is revenue across categories?
-
-Key Metrics:
-
-- Total Revenue
-- Rental Volume
-- Revenue per Rental
-- Film Count
-
-Example Output:
-
-<p align="center">
-  <img src="docs/category_revenue_mart.png" width="900">
-</p>
-
----
-
-### 4. Seasonal Demand Mart
-
-Model:
-
-```text
-mart_seasonal_demand
-```
-
-Business Questions:
-
-- How does demand change over time?
-- Which categories perform best during different periods?
-
-Key Metrics:
-
-- Active Customers
-- Rental Volume
-- Monthly Revenue
-
-Example Output:
-
-<p align="center">
-  <img src="docs/seasonal_demand_mart.png" width="900">
-</p>
-
----
-
-## Key Findings
-
-### Revenue Concentration
-
-Revenue was concentrated among a subset of film categories.
-
-Top-performing categories included:
-
-- Sports
-- Sci-Fi
-- Animation
-
-### Customer Value Differences
-
-Customer lifetime value varied significantly across the customer base, suggesting opportunities for customer segmentation and retention-focused analysis.
-
-### Demand Patterns
-
-Rental activity showed meaningful variation across months and categories, indicating seasonal demand behavior that could influence future inventory and pricing decisions.
+- **Revenue is volume-driven.** Revenue per rental is nearly constant (~$4.20), so the July peak ($28.4K, 5.9× May) reflects transaction volume, not pricing — confirmed by perfectly overlapping revenue/volume trends.
+- **Volume and unit economics diverge by category.** Comedy earns the highest revenue per rental ($4.66) on modest volume; Animation ranks #3 in total revenue but #12 in revenue per rental ($3.99).
+- **Customer value is concentrated.** Most customers generate $80–140 in the period; the top 5 customers each exceed $190, and rentals-vs-LTV correlation shows frequency (not spend per visit) drives value.
 
 ---
 
 ## Business Impact
 
-This project mirrors a common analytics engineering workflow: **Raw Data → dbt Models → Business Marts → Insights**, and demonstrates how dbt can be used to transform operational data into scalable analytics infrastructure.
-
-To be specific, the project created a reusable analytics layer that:
-
-- Centralizes business logic
-- Standardizes metric definitions
-- Reduces repeated SQL development
-- Supports future reporting and analysis
+The marts turn one-off SQL into shared infrastructure: business logic is centralized, metric definitions are standardized (one definition of LTV, one of revenue per rental), and every future report or dashboard starts from validated, business-ready tables instead of raw transactions.
 
 ---
 
 ## Repository Structure
 
-```text
+```
 movie-analytics-dbt/
-│
 ├── models/
-│   ├── staging/
-│   └── marts/
-│
-├── docs/
-│
+│   ├── staging/     # stg_customer_film_analytics
+│   └── marts/       # mart_customer_ltv, mart_category_revenue, mart_seasonal_demand
+├── docs/            # architecture diagram, dashboard screenshots
 └── README.md
 ```
 
----
+## Skills Demonstrated
 
-### Skills Demonstrated
-
-`SQL`
-`MySQL`
-`dbt`
-`ELT`
-`Data Modeling`
-`Business Intelligence`
-`Analytics Engineering`
-`Tableau`
+`SQL` `MySQL` `dbt` `ELT` `Data Modeling` `Data Validation` `Business Intelligence` `Tableau` `Analytics Engineering`
