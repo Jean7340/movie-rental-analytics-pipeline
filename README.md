@@ -39,22 +39,6 @@ Business Data Marts
 Business Insights
 ```
 
-### Data Flow
-
-```text
-raw_customer_film_analytics
-            ↓
-stg_customer_film_analytics
-            ↓
- ┌──────────┼──────────┐
- │          │          │
- ↓          ↓          ↓
-
-mart_customer_ltv
-mart_category_revenue
-mart_seasonal_demand
-```
-
 ---
 
 ## Data Overview
