@@ -2,6 +2,10 @@
 
 **Building reusable analytics marts with MySQL, dbt, and Tableau**
 
+![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
+![Tableau](https://img.shields.io/badge/Tableau-E97627?logo=tableau&logoColor=white)
+
 15,986 raw rental transactions (Sakila dataset, 599 customers, 16 categories) transformed into a layered analytics stack — from operational data to business dashboards, with a data-quality bug caught and fixed along the way.
 
 ---
@@ -118,7 +122,7 @@ The marts turn one-off SQL into shared infrastructure: business logic is central
 ## Repository Structure
 
 ```
-movie-analytics-dbt/
+.
 ├── models/
 │   ├── staging/     # stg_customer_film_analytics
 │   └── marts/       # mart_customer_ltv, mart_category_revenue, mart_seasonal_demand
