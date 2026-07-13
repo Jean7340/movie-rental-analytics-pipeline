@@ -8,7 +8,7 @@
 
 ## 📊 Interactive Dashboards
 
-🔗 **[View on Tableau Public](YOUR_TABLEAU_LINK_HERE)**
+🔗 **[View on Tableau Public](https://public.tableau.com/app/profile/jean.liu6359/viz/customerrentalanalytics/CustomerInsights2)**
 
 [![Dashboard Preview](docs/dashboard_overview.png)](YOUR_TABLEAU_LINK_HERE)
 
