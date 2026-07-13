@@ -2,11 +2,11 @@
 
 **Building reusable analytics marts with MySQL, dbt, and Tableau**
 
+15,986 raw rental transactions (Sakila dataset, 599 customers, 16 categories) transformed into a layered analytics stack — from operational data to business dashboards, with a data-quality bug caught and fixed along the way.
+
 ![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
 ![Tableau](https://img.shields.io/badge/Tableau-E97627?logo=tableau&logoColor=white)
-
-15,986 raw rental transactions (Sakila dataset, 599 customers, 16 categories) transformed into a layered analytics stack — from operational data to business dashboards, with a data-quality bug caught and fixed along the way.
 
 ---
 
